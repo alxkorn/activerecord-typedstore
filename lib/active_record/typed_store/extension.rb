@@ -24,7 +24,7 @@ module ActiveRecord::TypedStore
       decorate_attribute_type(store_attribute, :typed_store) do |subtype|
         Type.new(typed_klass, dsl.coder, subtype)
       end
-      store_accessor(store_attribute, dsl.accessors)
+      store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
 
       dsl.accessors.each do |accessor_name|
         define_method("#{accessor_name}_changed?") do
