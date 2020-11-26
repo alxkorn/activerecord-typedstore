@@ -30,7 +30,13 @@ module ActiveRecord::TypedStore
           Type.new(typed_klass, dsl.coder, subtype)
         end
       end
-      store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
+
+      if ActiveRecord.version >= Gem::Version.new('6.0.0')
+        store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
+      else
+        store_accessor(store_attribute, dsl.accessors)
+      end
+
 
       dsl.accessors.each do |accessor_name|
         define_method("#{accessor_name}_changed?") do
