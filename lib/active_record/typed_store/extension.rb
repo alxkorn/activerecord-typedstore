@@ -8,6 +8,89 @@ require 'active_record/typed_store/identity_coder'
 
 module ActiveRecord::TypedStore
   module Extension
+    def store_accessor(store_attribute, *keys, prefix: nil, suffix: nil)
+      if ActiveRecord.version < Gem::Version.new('6.0.0')
+        keys = keys.flatten
+
+        accessor_prefix =
+            case prefix
+            when String, Symbol
+              "#{prefix}_"
+            when TrueClass
+              "#{store_attribute}_"
+            else
+              ""
+            end
+        accessor_suffix =
+            case suffix
+            when String, Symbol
+              "_#{suffix}"
+            when TrueClass
+              "_#{store_attribute}"
+            else
+              ""
+            end
+
+        _store_accessors_module.module_eval do
+          keys.each do |key|
+            accessor_key = "#{accessor_prefix}#{key}#{accessor_suffix}"
+
+            define_method("#{accessor_key}=") do |value|
+              write_store_attribute(store_attribute, key, value)
+            end
+
+            define_method(accessor_key) do
+              read_store_attribute(store_attribute, key)
+            end
+
+            define_method("#{accessor_key}_changed?") do
+              return false unless attribute_changed?(store_attribute)
+              prev_store, new_store = changes[store_attribute]
+              prev_store&.dig(key) != new_store&.dig(key)
+            end
+
+            define_method("#{accessor_key}_change") do
+              return unless attribute_changed?(store_attribute)
+              prev_store, new_store = changes[store_attribute]
+              [prev_store&.dig(key), new_store&.dig(key)]
+            end
+
+            define_method("#{accessor_key}_was") do
+              return unless attribute_changed?(store_attribute)
+              prev_store, _new_store = changes[store_attribute]
+              prev_store&.dig(key)
+            end
+
+            define_method("saved_change_to_#{accessor_key}?") do
+              return false unless saved_change_to_attribute?(store_attribute)
+              prev_store, new_store = saved_change_to_attribute(store_attribute)
+              prev_store&.dig(key) != new_store&.dig(key)
+            end
+
+            define_method("saved_change_to_#{accessor_key}") do
+              return unless saved_change_to_attribute?(store_attribute)
+              prev_store, new_store = saved_change_to_attribute(store_attribute)
+              [prev_store&.dig(key), new_store&.dig(key)]
+            end
+
+            define_method("#{accessor_key}_before_last_save") do
+              return unless saved_change_to_attribute?(store_attribute)
+              prev_store, _new_store = saved_change_to_attribute(store_attribute)
+              prev_store&.dig(key)
+            end
+          end
+        end
+
+        # assign new store attribute and create new hash to ensure that each class in the hierarchy
+        # has its own hash of stored attributes.
+        self.local_stored_attributes ||= {}
+        self.local_stored_attributes[store_attribute] ||= []
+        self.local_stored_attributes[store_attribute] |= keys
+      else
+        super(store_attribute, *keys, prefix, suffix)
+      end
+    end
+
     def typed_store(store_attribute, options={}, &block)
       unless self < Behavior
         include Behavior
@@ -35,22 +118,6 @@ module ActiveRecord::TypedStore
         store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
       else
         store_accessor(store_attribute, dsl.accessors)
-      end
-
-
-      dsl.accessors.each do |accessor_name|
-        define_method("#{accessor_name}_changed?") do
-          send("#{store_attribute}_changed?") &&
-            send(store_attribute)[accessor_name] != send("#{store_attribute}_was")[accessor_name]
-        end
-
-        define_method("#{accessor_name}_was") do
-          send("#{store_attribute}_was")[accessor_name]
-        end
-
-        define_method("restore_#{accessor_name}!") do
-          send("#{accessor_name}=", send("#{accessor_name}_was"))
-        end
       end
     end
   end

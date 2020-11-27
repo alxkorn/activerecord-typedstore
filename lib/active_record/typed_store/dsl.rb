@@ -11,8 +11,6 @@ module ActiveRecord::TypedStore
       @accessors = options[:accessors]
       @accessors = [] if options[:accessors] == false
       @fields = {}
-      @prefix = options[:prefix]
-      @suffix = options[:suffix]
       yield self
     end
 
@@ -27,7 +25,7 @@ module ActiveRecord::TypedStore
     end
 
     def accessors
-      @accessors || fixed_accessors
+      @accessors || @fields.values.select(&:accessor).map(&:name)
     end
 
     delegate :keys, to: :@fields
@@ -39,15 +37,5 @@ module ActiveRecord::TypedStore
       end
     end
     alias_method :date_time, :datetime
-
-    def fixed_accessors
-      if ActiveRecord.version >= Gem::Version.new('6.0.0')
-        @fields.values.select(&:accessor).map(&:name)
-      else
-        @fields.values
-          .select(&:accessor)
-          .map { |accessor| [@prefix, accessor.name, @suffix].compact.join('_').to_sym }
-      end
-    end
   end
 end
