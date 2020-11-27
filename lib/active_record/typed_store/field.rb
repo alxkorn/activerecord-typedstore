@@ -2,7 +2,7 @@
 
 module ActiveRecord::TypedStore
   class Field
-    attr_reader :array, :blank, :default, :type, :null, :accessor, :type_sym
+    attr_reader :array, :blank, :name, :default, :type, :null, :accessor, :type_sym
 
     def initialize(name, type, options={})
       type_options = options.slice(:scale, :limit, :precision)
@@ -31,12 +31,6 @@ module ActiveRecord::TypedStore
         casted_value = default if casted_value.nil?
       end
       casted_value
-    end
-
-    def name
-      return @name if @accessor == true
-
-      accessor
     end
 
     private
