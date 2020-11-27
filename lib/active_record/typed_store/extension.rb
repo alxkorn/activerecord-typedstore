@@ -114,11 +114,7 @@ module ActiveRecord::TypedStore
         end
       end
 
-      if ActiveRecord.version >= Gem::Version.new('6.0.0')
-        store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
-      else
-        store_accessor(store_attribute, dsl.accessors)
-      end
+      store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
     end
   end
 end
