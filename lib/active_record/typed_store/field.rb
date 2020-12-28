@@ -2,7 +2,7 @@
 
 module ActiveRecord::TypedStore
   class Field
-    attr_reader :array, :blank, :name, :default, :type, :null, :accessor, :type_sym
+    attr_reader :array, :blank, :name, :default, :type, :null, :accessor, :type_sym, :guard
 
     def initialize(name, type, options={})
       type_options = options.slice(:scale, :limit, :precision)
@@ -17,10 +17,17 @@ module ActiveRecord::TypedStore
       @null = options.fetch(:null, true)
       @blank = options.fetch(:blank, true)
       @array = options.fetch(:array, false)
+      if options.key?(:guard)
+        @guard = options[:guard]
+      end
     end
 
     def has_default?
       defined?(@default)
+    end
+
+    def has_guard?
+      defined?(@guard)
     end
 
     def cast(value)
