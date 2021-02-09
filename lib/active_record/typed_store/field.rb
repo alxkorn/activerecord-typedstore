@@ -3,7 +3,7 @@
 module ActiveRecord::TypedStore
   class Field
     attr_reader :array, :blank, :name, :default, :type, :null, :accessor, :type_sym, :guard,
-                :before
+                :before, :group, :hidden
 
     def initialize(name, type, options={})
       type_options = options.slice(:scale, :limit, :precision)
@@ -18,7 +18,7 @@ module ActiveRecord::TypedStore
       @null = options.fetch(:null, true)
       @blank = options.fetch(:blank, true)
       @array = options.fetch(:array, false)
-      [:guard, :before].each do |field|
+      [:guard, :before, :group, :hidden].each do |field|
         if options.key?(field)
           instance_variable_set("@#{field}", options[field])
         end
