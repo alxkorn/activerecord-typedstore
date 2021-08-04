@@ -2,8 +2,10 @@
 
 module ActiveRecord::TypedStore
   class Field
-    attr_reader :array, :blank, :name, :default, :type, :null, :accessor, :type_sym, :guard,
-                :before, :group, :hidden
+    EXTRA_ATTRS = [:group, :hidden, :user, :inv_user].freeze
+
+    attr_reader :array, :blank, :name, :default, :type, :null, :accessor, :type_sym
+    attr_reader *EXTRA_ATTRS
 
     def initialize(name, type, options={})
       type_options = options.slice(:scale, :limit, :precision)
@@ -18,19 +20,14 @@ module ActiveRecord::TypedStore
       @null = options.fetch(:null, true)
       @blank = options.fetch(:blank, true)
       @array = options.fetch(:array, false)
-      [:guard, :before, :group, :hidden].each do |field|
-        if options.key?(field)
-          instance_variable_set("@#{field}", options[field])
-        end
+
+      EXTRA_ATTRS.each do |field|
+        instance_variable_set("@#{field}", options[field]) if options.key?(field)
       end
     end
 
     def has_default?
       defined?(@default)
-    end
-
-    def has_guard?
-      defined?(@guard)
     end
 
     def cast(value)
