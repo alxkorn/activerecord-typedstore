@@ -1,14 +1,18 @@
 # frozen_string_literal: true
 
+OLD_STORE_ACCESSOR = ActiveRecord.version < Gem::Version.new('6.0.0')
+
 require 'active_record/typed_store/dsl'
 require 'active_record/typed_store/behavior'
 require 'active_record/typed_store/type'
 require 'active_record/typed_store/typed_hash'
 require 'active_record/typed_store/identity_coder'
-require 'active_record/typed_store/prefix_accessor'
+require 'active_record/typed_store/prefix_accessor' if OLD_STORE_ACCESSOR
 
 module ActiveRecord::TypedStore
   module Extension
+    include PrefixAccessor if OLD_STORE_ACCESSOR
+
     def typed_store(store_attribute, options={}, &block)
       unless self < Behavior
         include Behavior
@@ -33,7 +37,7 @@ module ActiveRecord::TypedStore
         end
       end
 
-      if ActiveRecord.version < Gem::Version.new('6.0.0')
+      if OLD_STORE_ACCESSOR
         prefix_store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
       else
         store_accessor(store_attribute, dsl.accessors, prefix: options[:prefix], suffix: options[:suffix])
