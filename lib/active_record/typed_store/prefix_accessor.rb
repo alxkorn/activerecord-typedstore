@@ -38,20 +38,20 @@ module ActiveRecord::TypedStore
 
           define_method("#{accessor_key}_changed?") do
             return false unless attribute_changed?(store_attribute)
-            prev_store, new_store = changes[store_attribute]
-            prev_store&.dig(key) != new_store&.dig(key)
+
+            send(store_attribute)&.dig(key) != send("#{store_attribute}_was")&.dig(key)
           end
 
           define_method("#{accessor_key}_change") do
             return unless attribute_changed?(store_attribute)
-            prev_store, new_store = changes[store_attribute]
-            [prev_store&.dig(key), new_store&.dig(key)]
+
+            [send("#{store_attribute}_was")&.dig(key), send(store_attribute)&.dig(key)]
           end
 
           define_method("#{accessor_key}_was") do
             return unless attribute_changed?(store_attribute)
-            prev_store, _new_store = changes[store_attribute]
-            prev_store&.dig(key)
+            
+            send("#{store_attribute}_was")&.dig(key)
           end
 
           define_method("saved_change_to_#{accessor_key}?") do
